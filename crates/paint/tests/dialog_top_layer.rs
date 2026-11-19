@@ -113,9 +113,18 @@ fn top_layer_dialog_and_backdrop_paint_above_high_z_index_and_block_hits() {
         .find(|r| r.node_id == Some(dialog))
         .expect("dialog backdrop region");
     assert_eq!(top_region.kind, HitKind::Background);
-    let _ = list
-        .items
-        .iter()
-        .filter(|i| matches!(i, DisplayItem::SolidColor { .. }))
-        .count();
+    // The display list must order the dialog's red fill *after* the z-99999 green
+    // overlay: pixel sampling alone would miss a regression that still dims the
+    // backdrop but paints the dialog underneath (#1650).
+    let solid_index = |color: Color| {
+        list.items
+            .iter()
+            .position(|item| matches!(item, DisplayItem::SolidColor { color: c, .. } if *c == color))
+    };
+    let overlay_index = solid_index(Color::new(0, 255, 0, 255)).expect("overlay fill");
+    let dialog_index = solid_index(Color::new(255, 0, 0, 255)).expect("dialog fill");
+    assert!(
+        dialog_index > overlay_index,
+        "dialog must paint above the high z-index overlay ({dialog_index} > {overlay_index})"
+    );
 }

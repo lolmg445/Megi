@@ -110,7 +110,18 @@ fn style_collection_records_rules_for_each_group() {
     collection.add_css("div { width: 1px; } span { width: 2px; }", Origin::Author);
     let stylesheet = megi_css::parse_stylesheet("div { color: red; }");
     assert_eq!(stylesheet.rules.len(), 1);
-    let _ = &collection;
+    // The collection itself must record both compiled rules, in source order (#1649).
+    assert_eq!(collection.rules.len(), 2);
+    assert_eq!(collection.rules[0].source_order, 0);
+    assert_eq!(collection.rules[1].source_order, 1);
+    assert_eq!(collection.rules[0].declarations[0].raw_value, "1px");
+    assert_eq!(collection.rules[1].declarations[0].raw_value, "2px");
+    assert!(
+        collection
+            .rules
+            .iter()
+            .all(|rule| rule.origin == Origin::Author)
+    );
 }
 
 #[test]
