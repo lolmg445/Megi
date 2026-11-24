@@ -175,7 +175,11 @@ mod unit_tests {
         // reports the real content height.
         let restored_offset = 450u32;
         let viewport = 800u32;
-        let session = ScrollState::new(restored_offset + 1, 1);
+        // Mirror Session::restore (session/model.rs): the synthetic state is
+        // created with content = offset + 1 so that scroll_to(offset) survives
+        // clamping (max_offset = offset), then the offset is explicitly applied.
+        let mut session = ScrollState::new(restored_offset + 1, 1);
+        session.scroll_to(restored_offset);
         assert_eq!(session.offset(), restored_offset);
 
         // ensure_window rebuild pattern (frontend.rs).
